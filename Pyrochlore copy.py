@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-J_int = 1
-D_int = 0.3
+J_int = -1
+D_int = 0
 K_int = 0
 
 fo = open('input_matrix_JDK_hamiltonian_pyrochlore.dat', "r")
@@ -17,9 +17,9 @@ for row in ls_eq:
     i += 1
     data = [float(j) for j in row.split()]
     if(i in range(73)):
-        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = J_int*data[-1]
+        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = J_int*data[-1]/2
     elif(i in range(73,217)):
-        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = D_int*data[-1]
+        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = D_int*data[-1]/2
     else:
         J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = K_int*data[-1]
 del row, ls_eq, data
@@ -74,7 +74,7 @@ def B(m, theta, phi, B_ext):
 
 
 def Solver(x, B_ext):
-    S = 1/2
+    S = 1
     F = []
     for alpha in [1,2,3,4]:
         sum1, sum2 = 0, 0
@@ -82,8 +82,8 @@ def Solver(x, B_ext):
             for n_2 in [-1,0,1]:
                 for n_3 in [-1,0,1]:
                     for beta in [1,2,3,4]:
-                        sum1 += (S)*(D(alpha, n_1, n_2, n_3, beta, 1, 3, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]))
-                        sum2 += (S)*(D(alpha, n_1, n_2, n_3, beta, 2, 3, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]))
+                        sum1 += (S)*(D(alpha, -n_1, -n_2, -n_3, beta, 1, 3, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]))
+                        sum2 += (S)*(D(alpha, -n_1, -n_2, -n_3, beta, 2, 3, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]))
         sum1 -= B(1, x[alpha-1], x[alpha+3], B_ext)/2
         sum2 -= B(2, x[alpha-1], x[alpha+3], B_ext)/2
         F.append(sum1)
@@ -92,123 +92,177 @@ def Solver(x, B_ext):
 
 
 ##### Hessian Check ######
-def J_pp(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/4)*(D(alpha, n_1, n_2, n_3, beta, 1, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 1, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0+1j)*D(alpha, n_1, n_2, n_3, beta, 2, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) -D(alpha, n_1, n_2, n_3, beta, 2, 2, theta_alpha, phi_alpha, theta_beta, phi_beta))
-
-def J_nn(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/4)*(D(alpha, n_1, n_2, n_3, beta, 1, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 1, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0+1j)*D(alpha, n_1, n_2, n_3, beta, 2, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) -D(alpha, n_1, n_2, n_3, beta, 2, 2, theta_alpha, phi_alpha, theta_beta, phi_beta))    
-
-def J_pn(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/4)*(D(alpha, n_1, n_2, n_3, beta, 1, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 1, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0+1j)*D(alpha, n_1, n_2, n_3, beta, 2, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) +D(alpha, n_1, n_2, n_3, beta, 2, 2, theta_alpha, phi_alpha, theta_beta, phi_beta))
-
-def J_np(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/4)*(D(alpha, n_1, n_2, n_3, beta, 1, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 1, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0+1j)*D(alpha, n_1, n_2, n_3, beta, 2, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) +D(alpha, n_1, n_2, n_3, beta, 2, 2, theta_alpha, phi_alpha, theta_beta, phi_beta))
-
-def J_p3(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/2)*(D(alpha, n_1, n_2, n_3, beta, 1, 3, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 2, 3, theta_alpha, phi_alpha, theta_beta, phi_beta) )
-
-def J_n3(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/2)*(D(alpha, n_1, n_2, n_3, beta, 1, 3, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 2, 3, theta_alpha, phi_alpha, theta_beta, phi_beta) )
-
-def J_3p(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/2)*(D(alpha, n_1, n_2, n_3, beta, 3, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 3, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) )
-
-def J_3n(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return (1/2)*(D(alpha, n_1, n_2, n_3, beta, 3, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) + (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 3, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) )
-
-def J_33(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    return D(alpha, n_1, n_2, n_3, beta, 3, 3, theta_alpha, phi_alpha, theta_beta, phi_beta)
-
-## 1j = +    and     -1j = -
-def J_mn(mu, nu, alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
-    if(mu==1j):
-        if(nu==1j):
-            return J_pp(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==-1j):
-            return J_pn(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==3):
-            return J_p3(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        else:
-            print('Error')
-    elif(mu==-1j):
-        if(nu==1j):
-            return J_np(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==-1j):
-            return J_nn(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==3):
-            return J_n3(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        else:
-            print('Error')
-    elif(mu==3):
-        if(nu==3):
-            return D(alpha, n_1, n_2, n_3, beta, 3, 3, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==1j):
-            return J_3p(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        elif(nu==-1j):
-            return J_3n(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta)
-        else:
-            print('Error')
-    else:
-            print('Error')
-
-def KD(a,b):
+def KD(a, b):
     if(a==b):
         return 1
     else:
         return 0
 
-def Mix_2nd_der_Thete_Theta(beta, gamma, Theta_s, Phi_s):
+def Theta_Theta_2nd_Diff(beta, gamma, Theta_s, Phi_s):
     sum = 0
     for n1 in [-1,0,1]:
         for n2 in [-1,0,1]:
             for n3 in [-1,0,1]:
                 for alpha in range(1,5):
-                    A = (2*J_mn(1j, 1j, gamma, n1, n2, n3, alpha, Theta_s[alpha-1], Phi_s[alpha-1]))*(np.sin(Theta_s[alpha-1]*np.cos(Theta_s[gamma-1])))*np.exp(1j*(Phi_s[gamma-1]+Phi_s[gamma-1]))*(KD(beta,gamma)+KD(alpha,beta))
-                    B = -(2*J_mn(-1j, -1j, gamma, n1, n2, n3, alpha, Theta_s[alpha-1], Phi_s[alpha-1]))*(np.sin(Theta_s[alpha-1]*np.cos(Theta_s[gamma-1])))*np.exp(-1j*(Phi_s[gamma-1]+Phi_s[gamma-1]))*(KD(beta,gamma)+KD(alpha,beta))
+                    A = -(J_curly(gamma, n1, n2, n3, alpha, 3, 3) + J_curly(alpha, -n1, -n2, -n3, gamma, 3, 3))*(np.cos(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*KD(gamma,beta) - np.sin(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))
+                    B = (J_curly(gamma, n1, n2, n3, alpha, 1, 1) + J_curly(alpha, -n1, -n2, -n3, gamma, 1, 1))*(-np.sin(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*KD(gamma,beta) + np.cos(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.cos(Phi_s[gamma-1])*np.cos(Phi_s[alpha-1])
+                    C = (J_curly(gamma, n1, n2, n3, alpha, 2, 2) + J_curly(alpha, -n1, -n2, -n3, gamma, 2, 2))*(-np.sin(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*KD(gamma,beta) + np.cos(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.sin(Phi_s[gamma-1])*np.sin(Phi_s[alpha-1])
+                    D = (J_curly(gamma, n1, n2, n3, alpha, 1, 2)*np.cos(Phi_s[gamma-1])*np.sin(Phi_s[alpha-1]) + J_curly(alpha, -n1, -n2, -n3, gamma, 1, 2)*np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1]))*(-np.sin(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*KD(gamma,beta) + np.cos(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))
+                    E = (J_curly(gamma, n1, n2, n3, alpha, 2, 1)*np.sin(Phi_s[gamma-1])*np.cos(Phi_s[alpha-1]) + J_curly(alpha, -n1, -n2, -n3, gamma, 2, 1)*np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1]))*(-np.sin(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*KD(gamma,beta) + np.cos(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))
+                    F = (J_curly(gamma, n1, n2, n3, alpha, 2, 3) + J_curly(alpha, -n1, -n2, -n3, gamma, 3, 2))*(-np.sin(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*KD(gamma,beta) - np.cos(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.sin(Phi_s[gamma-1])
+                    G = (J_curly(gamma, n1, n2, n3, alpha, 1, 3) + J_curly(alpha, -n1, -n2, -n3, gamma, 3, 1))*(-np.sin(Theta_s[gamma-1])*np.cos(Theta_s[alpha-1])*KD(gamma,beta) - np.cos(Theta_s[gamma-1])*np.sin(Theta_s[alpha-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.cos(Phi_s[gamma-1])
+                    H = -(J_curly(gamma, n1, n2, n3, alpha, 3, 2) + J_curly(alpha, -n1, -n2, -n3, gamma, 2, 3))*(np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta) + np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.sin(Phi_s[alpha-1])
+                    I = -(J_curly(gamma, n1, n2, n3, alpha, 3, 1) + J_curly(alpha, -n1, -n2, -n3, gamma, 1, 3))*(np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta) + np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)))*np.cos(Phi_s[alpha-1])
+                    sum += A + B + C + D + E  + F + G + H + I
+    return sum
+
+def Theta_phi_2nd_Diff(beta,gamma,Theta_s,Phi_s):
+    sum=0
+    for n1 in [-1,0,1]:
+        for n2 in [-1,0,1]:
+            for n3 in [-1,0,1]:
+                for alpha in range(1,5):
+                    A1=-(J_curly(alpha,-n1,-n2,-n3,gamma,1,1)+J_curly(gamma,n1,n2,n3,alpha,1,1))*np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*(np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta)) 
+                    A2=(J_curly(alpha,-n1,-n2,-n3,gamma,2,2)+J_curly(gamma,n1,n2,n3,alpha,2,2))*np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*(np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta))
+                    A3=(J_curly(alpha,-n1,-n2,-n3,gamma,1,2)*np.cos(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])-J_curly(gamma,n1,n2,n3,alpha,1,2)*np.sin(Phi_s[gamma-1])*np.sin(Phi_s[alpha-1]))*(np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta))
+                    A4=(-J_curly(alpha,-n1,-n2,-n3,gamma,2,1)*np.sin(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])+J_curly(gamma,n1,n2,n3,alpha,2,1)*np.cos(Phi_s[gamma-1])*np.cos(Phi_s[alpha-1]))*(np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta))
+                    A5=(J_curly(alpha,-n1,-n2,-n3,gamma,3,2)+J_curly(gamma,n1,n2,n3,alpha,2,3))*np.cos(Phi_s[gamma-1])*(-np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.cos(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta))
+                    A6=-(J_curly(alpha,-n1,-n2,-n3,gamma,3,1)+J_curly(gamma,n1,n2,n3,alpha,1,3))*np.sin(Phi_s[gamma-1])*(-np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.cos(Theta_s[alpha-1])*np.cos(Theta_s[gamma-1])*KD(gamma,beta))
+                    sum += A1 + A2 + A3 + A4 + A5 + A6
+    return sum
 
 
-def Hessian_Check(f, Point):
+def Phi_Phi_2nd_Diff(beta,gamma,Theta_s,Phi_s):
+    sum=0
+    for n1 in [-1,0,1]:
+        for n2 in [-1,0,1]:
+            for n3 in [-1,0,1]:
+                for alpha in range(1,5):
+                    A1=(J_curly(alpha,-n1,-n2,-n3,gamma,3,2)+J_curly(gamma,n1,n2,n3,alpha,2,3))*np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(-np.sin(Phi_s[gamma-1])*KD(beta,gamma))
+                    A2=(J_curly(alpha,-n1,-n2,-n3,gamma,3,1)+J_curly(gamma,n1,n2,n3,alpha,1,3))*np.cos(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(np.cos(Phi_s[gamma-1])*KD(beta,gamma))
+                    A3=-(J_curly(alpha,-n1,-n2,-n3,gamma,1,1)+J_curly(gamma,n1,n2,n3,alpha,1,1))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(-np.sin(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.cos(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    A4=(J_curly(alpha,-n1,-n2,-n3,gamma,2,2)+J_curly(gamma,n1,n2,n3,alpha,2,2))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(np.cos(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)-np.sin(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    A5=(J_curly(alpha,-n1,-n2,-n3,gamma,1,2))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(-np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)-np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    A6=-(J_curly(gamma,n1,n2,n3,alpha,1,2))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    A7=-(J_curly(alpha,-n1,-n2,-n3,gamma,2,1))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)+np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    A8=(J_curly(gamma,n1,n2,n3,alpha,2,1))*np.sin(Theta_s[alpha-1])*np.sin(Theta_s[gamma-1])*(-np.sin(Phi_s[alpha-1])*np.cos(Phi_s[gamma-1])*KD(n1,0)*KD(n2,0)*KD(n3,0)*KD(alpha,beta)-np.cos(Phi_s[alpha-1])*np.sin(Phi_s[gamma-1])*KD(gamma,beta)) 
+                    sum += A1 + A2 + A3 + A4 + A5 + A6 + A7 + A8
+    return sum
+
+def Hessian_Check(Theta_s, Phi_s, B_ext):
+    S = 1
     H = np.zeros((8,8), dtype=float)
-    for i in range(8):
-        for j in range(i,8):
-            H[i][j] = mixed_second_derivative(f,i,j,Point)
-            if(i!=j):
-                H[j][i] = H[i][j]
-    Eigen_Values = np.linalg.eigvals(H)
-    if(Eigen_Values.imag.max()>1e-4): 
-        print('Complex Eigen Value Error in Hessian Test')
+    for alpha in range(4):
+        for beta in range(4):
+            H[alpha][beta] = (S**2)*Theta_Theta_2nd_Diff(alpha+1, beta+1, Theta_s, Phi_s) + S*(B_ext[0]*np.sin(Theta_s[beta])*np.cos(Phi_s[beta]) + B_ext[1]*np.sin(Theta_s[beta])*np.sin(Phi_s[beta]) + B_ext[2]*np.cos(Theta_s[beta]))*KD(alpha, beta)
+            H[alpha][beta+4] = (S**2)*Theta_phi_2nd_Diff(alpha+1, beta+1, Theta_s, Phi_s) + S*(B_ext[0]*np.cos(Theta_s[beta])*np.sin(Phi_s[beta]) - B_ext[1]*np.cos(Theta_s[beta])*np.cos(Phi_s[beta]))*KD(alpha, beta)
+            H[alpha+4][beta] = (S**2)*Theta_phi_2nd_Diff(beta+1, alpha+1, Theta_s, Phi_s) + S*(B_ext[0]*np.cos(Theta_s[beta])*np.sin(Phi_s[beta]) - B_ext[1]*np.cos(Theta_s[beta])*np.cos(Phi_s[beta]))*KD(alpha, beta)
+            H[alpha+4][beta+4] = (S**2)*Phi_Phi_2nd_Diff(alpha+1, beta+1, Theta_s, Phi_s) + S*(B_ext[0]*np.sin(Theta_s[beta])*np.cos(Phi_s[beta]) + B_ext[1]*np.sin(Theta_s[beta])*np.sin(Phi_s[beta]))*KD(alpha, beta)
+    # for i in range(8):
+    #     for j in range(8):
+    #         print(np.round(H[i,j],1), end=' ')
+    #     print('\n')
+
+    # if(np.allclose(H.T, H)):
+    #     print('Hessian is symmetric')
+    # Eigen_Values = np.linalg.eigvals(H)
+    # if(Eigen_Values.imag.max()>1e-4): 
+    #     print('Complex Eigen Value Error in Hessian Test')
+    # else:
+    #     Hessian_EV = Eigen_Values
+    #     print(Hessian_EV)
+    #     if(Hessian_EV.min() > 0 or abs(Hessian_EV.min())<=1e-4 ):
+    #         print('Hessian is positive definite')
+    #     else:
+    #         print('Hessian is NOT positive definte')
+
+    try:
+        L = np.linalg.cholesky(H)
+        print('Hessian is positive definite')
+        # for i in range(8):
+        #     for j in range(8):
+        #         print(np.round(L[i,j],1), end=' ')
+        #     print('\n')
+    except:
+        print('Hessian is NOT positive definite----Error----')
+
+def S_Lambda(Lambda, theta_alpha, phi_alpha):
+    S = 1
+    if(Lambda==3):
+        return S*np.cos(theta_alpha)
+    elif(Lambda==1):
+        return S*np.sin(theta_alpha)*np.cos(phi_alpha)
+    elif(Lambda==2):
+        return S*np.sin(theta_alpha)*np.sin(phi_alpha)
     else:
-        Hessian_EV = np.real_if_close(Eigen_Values, 1e-4)
-        #print(Hessian_EV)
-        if(Hessian_EV.min() > 0):
-            print('Hessian is positive definite')
-        else:
-            print('Hessian is NOT positive definte')
+        print('Error')
 
 
-#guess =  [0.02871551605672237, 0.02871551605672237, 6.254469791122863, 6.254469791122863, 1.542092642554493, 1.5995000110353, 1.5995000110353, 1.542092642554493]
+def Classical_Energy_at(Angles):
+    sum = 0
+    for n1 in [-1,0,1]:
+        for n2 in [-1,0,1]:
+            for n3 in [-1,0,1]:
+                for alpha in range(1,5):
+                    for beta in range(1,5):
+                        for Lambda in range(1,4):
+                            for Mu in range(1,4):
+                                # if(n1==0 and n2==0 and n3==0):
+                                sum += J_curly(alpha, n1, n2, n3, beta, Lambda, Mu)*S_Lambda(Lambda, Angles[alpha-1], Angles[alpha+3])*S_Lambda(Mu, Angles[beta-1], Angles[beta+3])
+                                # else:
+                                #     sum += 0.5*J_curly(alpha, n1, n2, n3, beta, Lambda, Mu)*S_Lambda(Lambda, Angles[alpha-1], Angles[alpha+3])*S_Lambda(Mu, Angles[beta-1], Angles[beta+3])
+    return sum/4
 
-guess =  [2.18627604, 2.18627604, 0.95531662, 0.95531662,  2.18627604, 2.18627604, 0.95531662, 0.95531662] #J=1,D=0.3,K=0
+
+
+#J =-1, D = 0.3, K = -0.3
+guess =  [1.547705951521779, 1.593886702068014, 1.593886702068014, 1.547705951521779, 0.023096533230685   ,0.023096533230685   ,6.260088773948902   ,6.260088773948902]
+
+# a = 1
+# b = 1
+# print(D(a,0,0,0,b,1,3,guess[a-1], guess[a+1], guess[b-1], guess[b+1]))
+
+#J = 1 , D = 0.3, K = 0
+#guess = [2.18627604, 2.18627604, 0.95531662, 0.95531662, 3.92699082, 0.78539816, 2.35619449, 5.49778714]
+#guess = [2.08627604, 2.38627604, 0.85531662, 0.85531662, 3.72699082, 0.77539816, 2.35619449, 5.49778714]
+
+
+# fo = open('Classical_spin_orientations_FM_D_p3.dat', "r")
+# ls_eq = fo.read().split('\n')
+# fo.close()
+# for row in ls_eq:
+#     data = [float(j) for j in row.split()]
+#     if(np.round(data[0], 1)==float(K_int)):
+#         for i in range(4):
+#             Theta_s[i] = data[i+1]
+#             Phi_s[i] = data[5+i]
+#         break
+# del ls_eq, row, data
 
 B_ext = [0,0,0]
 root = fsolve(Solver,guess,args=B_ext)
+#root = guess
 Function = Solver(root, B_ext)
 print('----------------------------')
-print('Angles =', root)
-print('----------------------------')
+print(f'Angles = {root[0],root[1],root[2],root[3], root[4],root[5],root[6],root[7]}')
+print('----------------------------') 
 print('Function value at this Angles =', Function)
 print(np.isclose(Solver(root, B_ext), [0, 0, 0 ,0 ,0 ,0 ,0 ,0], atol=1.0e-4))
 print('----------------------------')
-Hessian_Check(Classical_Energy_at, root)
+Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]], B_ext)
+print('Classical Energy = ', Classical_Energy_at(root))
 
 
 # X, B_theta = [], []
 # T1, T2, T3, T4 = [], [], [], []
 # P1, P2, P3, P4 = [], [], [], []
+# CE = []
 # B_dir = [1,0,0]
-# for i in range(1):
+# for i in range(11):
 #     B_ext = (i/10)*np.array(B_dir)/np.sqrt(B_dir[0]+B_dir[1]+B_dir[2])
 #     B_mag = np.sqrt(np.dot(B_ext, B_ext))
+#     # if(B_mag > 0.02):
+#     #     break
 #     X += [B_mag]
 #     B_theta += [np.degrees(np.arccos(B_dir[2]/np.sqrt(B_dir[0]+B_dir[1]+B_dir[2])))]
 #     convergence = False
@@ -225,6 +279,7 @@ Hessian_Check(Classical_Energy_at, root)
 #                 count += 1
 #         else:
 #             convergence = True
+#             Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]], B_ext)
 #             print(root)
 #             T1 += [np.degrees(root[0])]
 #             T2 += [np.degrees(root[1])]
@@ -234,6 +289,7 @@ Hessian_Check(Classical_Energy_at, root)
 #             P2 += [np.degrees(root[5])]
 #             P3 += [np.degrees(root[6])]
 #             P4 += [np.degrees(root[7])]
+#             CE += [Classical_Energy_at(root)]
 #     guess = root  
 
 

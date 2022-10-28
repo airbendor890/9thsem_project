@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-J_int = -1
+J_int = 1
 D_int = 0.3
-K_int = 0.3
+K_int = 0
 
 fo = open('input_matrix_JDK_hamiltonian_pyrochlore.dat', "r")
 ls_eq = fo.read().split('\n')
@@ -17,9 +17,9 @@ for row in ls_eq:
     i += 1
     data = [float(j) for j in row.split()]
     if(i in range(73)):
-        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = J_int*data[-1]
+        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = J_int*data[-1]/2
     elif(i in range(73,217)):
-        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = D_int*data[-1]
+        J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = D_int*data[-1]/2
     else:
         J_Matrix[int(data[0]-1), int(data[1]+1), int(data[2]+1), int(data[3]+1), int(data[4]-1), int(data[5]-1), int(data[6]-1)] = K_int*data[-1]
 del row, ls_eq, data
@@ -91,6 +91,7 @@ def Solver(x, B_ext):
     return F
 
 
+
 ##### Hessian Check ######
 def J_pp(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
     return (1/4)*(D(alpha, n_1, n_2, n_3, beta, 1, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0 + 1j)*D(alpha, n_1, n_2, n_3, beta, 1, 2, theta_alpha, phi_alpha, theta_beta, phi_beta) - (0+1j)*D(alpha, n_1, n_2, n_3, beta, 2, 1, theta_alpha, phi_alpha, theta_beta, phi_beta) -D(alpha, n_1, n_2, n_3, beta, 2, 2, theta_alpha, phi_alpha, theta_beta, phi_beta))
@@ -118,6 +119,24 @@ def J_3n(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_bet
 
 def J_33(alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
     return D(alpha, n_1, n_2, n_3, beta, 3, 3, theta_alpha, phi_alpha, theta_beta, phi_beta)
+
+
+def Solver2(x, B_ext):
+    S = 1/2
+    F = []
+    for beta in [1,2,3,4]:
+        sum1, sum2 = 0, 0
+        for n_1 in [-1,0,1]:
+            for n_2 in [-1,0,1]:
+                for n_3 in [-1,0,1]:
+                    for alpha in [1,2,3,4]:
+                        sum1 += (2*S)*(J_p3(alpha, n_1, n_2, n_3, beta, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]) + J_3p(beta, -n_1, -n_2, -n_3, alpha, x[beta-1], x[beta+3], x[alpha-1], x[alpha+3]))
+                        sum2 += (2*S)*(J_n3(alpha, n_1, n_2, n_3, beta, x[alpha-1], x[alpha+3], x[beta-1], x[beta+3]) + J_3n(beta, -n_1, -n_2, -n_3, alpha, x[beta-1], x[beta+3], x[alpha-1], x[alpha+3]))
+        sum1 -= B(1, x[alpha-1], x[alpha+3], B_ext)
+        sum2 -= B(2, x[alpha-1], x[alpha+3], B_ext)
+        F.append(sum1)
+        F.append(sum2)
+    return F
 
 ## 1j = +    and     -1j = -
 def J_mn(mu, nu, alpha, n_1, n_2, n_3, beta, theta_alpha, phi_alpha, theta_beta, phi_beta):
@@ -221,19 +240,20 @@ def Hessian_Check(Theta_s, Phi_s):
 
 #guess =  [2.18627604, 2.18627604, 0.95531662, 0.95531662, 3.92699082, 0.78539816, 2.35619449, 5.49778714] #J=1,D=0.3,K=0
 
+#guess = [2.08627604, 2.38627604, 0.85531662, 0.85531662, 3.72699082, 0.77539816, 2.35619449, 5.49778714]
 guess =  [1.547705951521779, 1.593886702068014, 1.593886702068014, 1.547705951521779, 0.023096533230685   ,0.023096533230685   ,6.260088773948902   ,6.260088773948902]
 
 B_ext = [0,0,0]
-#root = fsolve(Solver,guess,args=B_ext)
+#root = fsolve(Solver2,guess,args=B_ext)
 root=guess
-Function = Solver(root, B_ext)
+Function = Solver2(root, B_ext)
 print('----------------------------')
 print(f'Angles = {root[0],root[1],root[2],root[3], root[4],root[5],root[6],root[7]}')
 print('----------------------------')
 print('Function value at this Angles =', Function)
 print(np.isclose(Solver(root, B_ext), [0, 0, 0 ,0 ,0 ,0 ,0 ,0], atol=1.0e-4))
 print('----------------------------')
-Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]])
+#Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]])
 
 
 # X, B_theta = [], []
@@ -283,7 +303,7 @@ Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]
 # ax.quiver(2-np.cos(root[5])*np.sin(root[1])/2, 2-np.sin(root[5])*np.sin(root[1])/2, -np.cos(root[1])/2, np.cos(root[5])*np.sin(root[1]), np.sin(root[5])*np.sin(root[1]), np.cos(root[1]), color='m')
 # ax.quiver(-np.cos(root[6])*np.sin(root[2])/2, 2-np.sin(root[6])*np.sin(root[2])/2, 2-np.cos(root[2])/2, np.cos(root[6])*np.sin(root[2]), np.sin(root[6])*np.sin(root[2]), np.cos(root[2]), color='y')
 # ax.quiver(2-np.cos(root[7])*np.sin(root[3])/2, -np.sin(root[7])*np.sin(root[3])/2, 2-np.cos(root[3])/2, np.cos(root[7])*np.sin(root[3]), np.sin(root[7])*np.sin(root[3]), np.cos(root[3]), color='g')
-# if(i!= 0): ax.quiver(0,0,0, B_dir[0], B_dir[1], B_dir[2], color='red')
+# #if(i!= 0): ax.quiver(0,0,0, B_dir[0], B_dir[1], B_dir[2], color='red')
 # for i in range(6):
 #     ax.plot([VecStart_x[i], VecEnd_x[i]], [VecStart_y[i],VecEnd_y[i]],zs=[VecStart_z[i],VecEnd_z[i]], color='grey')
 # ax.set_xlim([-1, 3])
@@ -292,7 +312,7 @@ Hessian_Check([root[0],root[1],root[2],root[3]],[root[4],root[5],root[6],root[7]
 # ax.set_xlabel('X')
 # ax.set_ylabel('Y')
 # ax.set_zlabel('Z')
-# plt.title(f'J={J_int}, D={D_int}, K={K_int}, B={B_mag}[{B_dir[0]}, {B_dir[1]}, {B_dir[2]}]')
+# #plt.title(f'J={J_int}, D={D_int}, K={K_int}, B={B_mag}[{B_dir[0]}, {B_dir[1]}, {B_dir[2]}]')
 # plt.show()
 
 
