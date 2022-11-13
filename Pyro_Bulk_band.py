@@ -167,19 +167,20 @@ def Elements_B_q(q, alpha, beta, Theta_s, Phi_s):
     return 2*n_q(q)*(J_q(-q, -1j, -1j, alpha, beta, Theta_s[alpha-1], Phi_s[alpha-1], Theta_s[beta-1], Phi_s[beta-1]) + J_q(q, -1j, -1j, beta, alpha, Theta_s[beta-1], Phi_s[beta-1], Theta_s[alpha-1], Phi_s[alpha-1]))
 
 
-#J = -1, D =0.3, K=-0.3
-# Theta_s = [1.19816431, 1.24686195, 1.21764468, 1.19976735]
-# Phi_s = [0.40160293, 0.39246427, 6.66069236, 6.63173903]
-# B_ext = 0.01*np.array([1,1,1])
+
+Theta_s = [0.9608872073960715, 0.9497240183560501, 2.1807054461937225, 2.1918686352337424]
+Phi_s = [0.7736956093192403, 3.9389738214246215, 5.509489697860347, 2.3442114857549665]
+B_ext = 0.1*np.array([1,0,0])/np.sqrt(1)
+#B_ext = [0.1, 0, 0]
 
 # Theta_s = [1.547705951521779, 1.593886702068014, 1.593886702068014, 1.547705951521779]
 # Phi_s = [0  ,0  ,6.260088773948902 ,6.260088773948902]
 # B_ext = [0,0,0]
 
 # J =1, D=0.3, K=0, B=[1,0,0] 
-Theta_s = [2.24721644, 2.12756152, 0.89437621, 1.01403113 ]
-Phi_s = [4.07349797, 0.67187216, 2.20968734 ,5.61131314]
-B_ext = [1,0,0]
+# Theta_s = [2.24721644, 2.12756152, 0.89437621, 1.01403113 ]
+# Phi_s = [4.07349797, 0.67187216, 2.20968734 ,5.61131314]
+# B_ext = [1,0,0]
 
 
 # J =1 , D =0.3, K =0
@@ -187,19 +188,24 @@ B_ext = [1,0,0]
 # Phi_s = [3.96380197, 0.7511103, 2.31938334, 5.53207501]
 # B_ext = [0,0,0]
 
-# fo = open('Classical_spin_orientations_FM_D_p3.dat', "r")
+# Theta_s, Phi_s = np.zeros(4), np.zeros(4)
+# #B_ext = [0,0,0]
+# #fo = open('Classical_spin_orientations_FM_D_p3.dat', "r")
+# fo = open('spin_orientations_fm_D_mp3_h_p1_110.dat', "r")
 # ls_eq = fo.read().split('\n')
 # fo.close()
 # for row in ls_eq:
 #     data = [float(j) for j in row.split()]
-#     if(np.round(data[0], 1)==float(K_int)):
+#     if(np.round(data[0], 3)==float(K_int)):
 #         for i in range(4):
 #             Theta_s[i] = data[i+1]
 #             Phi_s[i] = data[5+i]
 #         break
 # del ls_eq, row, data
-
 # print(Theta_s, Phi_s)
+
+# Theta_s = [1.644230896895485, 1.4973086547196757, 1.5707674703577612, 1.5707725093094291]
+# Phi_s = [0.7853638297402888, 0.7853633250895351, 0.7853653270216494, 0.7853710690107436]
 
 def Eigen_Value_finder(q):
     A_q = np.zeros((4,4), dtype=np.csingle)
@@ -229,12 +235,13 @@ def Eigen_Value_finder(q):
                 D_q[i+4, j+4] = -A_nq_T[i, j] 
             D_q[i, 4+j] = B_q[i,j]
             D_q[i+4, j] = -B_q_H[i, j]
-
     Eigen_Values = np.linalg.eigvals(D_q)
     if(Eigen_Values.imag.max()>1e-4): 
-        print('Complex Eigen Value Error')
-        #print(Eigen_Values)
+        print('Complex Eigen Value Error at q = ', print(q))
+        print(Eigen_Values)
     return np.real_if_close(Eigen_Values, 1e-4)
+
+#print(Eigen_Value_finder(np.array([0,0,0])))
 
 
 def Draw_Band(Path):
@@ -282,7 +289,7 @@ def Draw_Band(Path):
     plt.title(f'J = {J_int}, D = {D_int}, K = {K_int} , B =[{B_ext[0]}, {B_ext[1]}, {B_ext[2]}]')
     plt.show()
 
-#Draw_Band(['G','X'])
-Draw_Band(['G','X','W','G','L','W','U','X','K','G'])
+Draw_Band(['G','X'])
+#Draw_Band(['G','X','W','G','L','W','U','X','K','G'])
 #print(Eigen_Value_finder(np.array([np.pi, np.pi, np.pi])))
 
